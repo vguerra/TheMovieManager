@@ -14,7 +14,6 @@
 //  We will talk more about persistance in a later course.
 //
 
-import UIKit
 import Foundation
 
 // MARK: - File Support
@@ -91,50 +90,15 @@ class TMDBConfig: NSObject, NSCoding {
     
     func updateConfiguration() {
         
-        /* TASK: Get TheMovieDB configuration, and update the config */
-        
-        /* Grab the app delegate and session */
-        let appDelegate = UIApplication.sharedApplication().delegate as! AppDelegate
-        let session = NSURLSession.sharedSession()
-        
-        /* 1. Set the parameters */
-        let methodParameters = [
-            "api_key": appDelegate.apiKey
-        ]
-        
-        /* 2. Build the URL */
-        let urlString = appDelegate.baseURLSecureString + "configuration" + appDelegate.escapedParameters(methodParameters)
-        let url = NSURL(string: urlString)!
-        
-        /* 3. Configure the request */
-        let request = NSMutableURLRequest(URL: url)
-        request.addValue("application/json", forHTTPHeaderField: "Accept")
-        
-        /* 4. Make the request */
-        let task = session.dataTaskWithRequest(request) { data, response, downloadError in
+        TMDBClient.sharedInstance().getConfig() { didSucceed, error in
             
-            if let error = downloadError {
-                println("Could not complete the request \(error)")
+            if let error = error {
+                println("Error updating config: \(error.localizedDescription)")
             } else {
-                
-                /* 5. Parse the data */
-                var parsingError: NSError? = nil
-                let parsedResult = NSJSONSerialization.JSONObjectWithData(data, options: NSJSONReadingOptions.AllowFragments, error: &parsingError) as! NSDictionary
-                
-                /* 6. Use the data! */
-                if let error = parsingError {
-                    println("Error updating config: \(error.localizedDescription)")
-                } else if let newConfig = TMDBConfig(dictionary: parsedResult as! [String : AnyObject]) {
-                    appDelegate.config = newConfig
-                    appDelegate.config.save()
-                } else {
-                    println("Could not parse config")
-                }
+                println("Updated Config: \(didSucceed)")
+                self.save()
             }
         }
-        
-        /* 7. Start the request */
-        task.resume()
     }
     
     // MARK: - NSCoding
